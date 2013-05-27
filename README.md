@@ -33,7 +33,7 @@ Then you may choose the file to open.
 
 ## Behind the scene
 
-With only 22 lines in total, `found` is deadly simple.  First, it joins all the terms from the command line into a `locate` query, e.g.:
+`Found` is deadly simple.  First, it joins all the terms from the command line into a `locate` query, e.g.:
 
     $ found lamport pdf
 
