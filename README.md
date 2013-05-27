@@ -4,9 +4,9 @@
 
 ## Usage
 
-Simply call `found` with terms that appears in the target file name.  For example:
+Check out `found` and put the script into one of your `PATH` directories.  Call `found` with some terms that appears in the target file name.  For example:
 
-    found lamport pdf
+    $ found lamport pdf
 
 Sample output:
 
@@ -35,10 +35,10 @@ Then you may choose the file to open.
 
 With only 22 lines in total, `found` is deadly simple.  First, it joins all the terms from the command line into a `locate` query, e.g.:
 
-    found lamport pdf
+    $ found lamport pdf
 
 turns into:
 
-    locate -b -i "*lamport*pdf*"
+    $ locate -b -i "*lamport*pdf*"
 
 After you specified the file to open, `found` will call `xdg-open` to open the file with the most appropriate program.
