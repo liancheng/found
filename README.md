@@ -29,7 +29,7 @@ Sample output:
 
     Which file to open: 
 
-Then you may choose the file to open.
+Then you may choose the file to open.  If there's only one match, the file will be opened directly.
 
 ## Behind the scene
 
