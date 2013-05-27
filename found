@@ -1,21 +1,26 @@
 #!/usr/bin/env python
 
 from os import path, system
-
-import subprocess
+from subprocess import call, check_output
 import sys
+
+
+def open_file(filename):
+    call(['xdg-open', filename])
 
 
 if __name__ == '__main__':
     pattern = '*%s*' % ('*'.join(sys.argv[1:]))
-    output = subprocess.check_output(['locate', '-b', '-i', pattern])
-    items = output[:-1].split('\n')
+    items = check_output(['locate', '-b', '-i', pattern])[:-1].split('\n')
 
-    for i in range(1, len(items) + 1):
-        print '[%d]' % i, path.basename(items[i - 1])
+    if len(items) == 1:
+        open_file(items[0])
+    else:
+        for i in range(1, len(items) + 1):
+            print '[%d]' % i, path.basename(items[i - 1])
 
-    try:
-        item_no = int(raw_input("\nWhich file to open: "))
-        subprocess.call(['xdg-open', items[item_no - 1]])
-    except:
-        pass
+        try:
+            item_no = int(raw_input("\nWhich file to open: "))
+            open_file(items[item_no - 1])
+        except:
+            pass
