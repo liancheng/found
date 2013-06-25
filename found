@@ -1,29 +1,58 @@
 #!/usr/bin/env python
 
 from os import path, system
-from subprocess import call, check_output, CalledProcessError
+from subprocess import call, check_output
+
 import sys
+
+
+BASENAME = 0
+DIR = 1
 
 
 def open_file(filename):
     call(['xdg-open', filename])
 
 
-if __name__ == '__main__':
-    pattern = '*%s*' % ('*'.join(sys.argv[1:]))
+def locate(terms, mode=BASENAME, ignorecase=True):
+    options = []
+
+    if mode == BASENAME:
+        pattern = '*%s*' % '*'.join(terms)
+        options.append('-b')
+    elif mode == DIR:
+        pattern = '*%s' % '*'.join(terms)
+
+    if ignorecase:
+        options.append('-i')
+
+    cmd = ['locate']
+    cmd.extend(options)
+    cmd.append(pattern)
 
     try:
-        items = check_output(['locate', '-b', '-i', pattern])[:-1].split('\n')
+        return check_output(cmd)[:-1].split('\n')
+    except:
+        return []
 
-        if len(items) == 1:
-            open_file(items[0])
-        else:
-            for i in range(1, len(items) + 1):
-                print '[%d]' % i, items[i - 1]
 
+if __name__ == '__main__':
+    mode = sys.argv[1].startswith('/') and DIR or BASENAME
+    items = locate(sys.argv[1:], mode=mode)
+
+    if len(items) == 0:
+        print "File(s) not found."
+
+    elif len(items) == 1:
+        open_file(items[0])
+
+    else:
+        for i in range(1, len(items) + 1):
+            print '[%d]' % i, items[i - 1]
+
+        try:
             item_no = int(raw_input("\nWhich file to open: "))
             open_file(items[item_no - 1])
-    except CalledProcessError:
-        print "File(s) not found."
-    except:
-        pass
+
+        except:
+            pass
