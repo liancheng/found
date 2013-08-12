@@ -1,34 +1,31 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 from os import path, system
 from subprocess import call, check_output
 
+import argparse
 import sys
-
-
-BASENAME = 0
-DIR = 1
 
 
 def open_file(filename):
     call(['xdg-open', filename])
 
 
-def locate(terms, mode=BASENAME, ignorecase=True):
+def locate(terms, is_directory, case_sensitive):
     options = []
 
-    if mode == BASENAME:
-        pattern = '*%s*' % '*'.join(terms)
-        options.append('-b')
-    elif mode == DIR:
-        pattern = '*%s' % '*'.join(terms)
+    if is_directory:
+        pattern = '*' + '*'.join(terms)
+    else:
+        pattern = '*' + '*'.join(terms) + '*'
+        options.append('--basename')
 
-    if ignorecase:
-        options.append('-i')
+    if not case_sensitive:
+        options.append('--ignore-case')
 
-    cmd = ['locate']
-    cmd.extend(options)
-    cmd.append(pattern)
+    cmd = ['locate'] + options + [pattern]
 
     try:
         return check_output(cmd)[:-1].split('\n')
@@ -36,22 +33,49 @@ def locate(terms, mode=BASENAME, ignorecase=True):
         return []
 
 
+def show_candidates(items):
+    try:
+        from termcolor import colored
+
+        for i in range(1, len(items) + 1):
+            print(colored('[%d] ' % i, 'yellow', attrs=['bold']), end='')
+            print(items[i - 1])
+
+    except:
+        for i in range(1, len(items) + 1):
+            print('[%d]' % i, items[i - 1])
+
+
 if __name__ == '__main__':
-    mode = sys.argv[1].startswith('/') and DIR or BASENAME
-    items = locate(sys.argv[1:], mode=mode)
+    parser = argparse.ArgumentParser(description='Find and open files easily.')
+
+    parser.add_argument('terms',
+                        metavar='term',
+                        nargs='+',
+                        help='The terms to search with')
+
+    parser.add_argument('-d', '--directory',
+                        action='store_true',
+                        help='Search for directories instead of files')
+
+    parser.add_argument('-c', '--case-sensitive',
+                        action='store_true',
+                        help='Enable case sensitive search')
+
+    args = parser.parse_args()
+    items = locate(args.terms, args.directory, args.case_sensitive)
 
     if len(items) == 0:
-        print "File(s) not found."
+        print("File(s) not found.")
 
     elif len(items) == 1:
         open_file(items[0])
 
     else:
-        for i in range(1, len(items) + 1):
-            print '[%d]' % i, items[i - 1]
+        show_candidates(items)
 
         try:
-            item_no = int(raw_input("\nWhich file to open: "))
+            item_no = int(raw_input("\nChoose one file to open: "))
             open_file(items[item_no - 1])
 
         except:
