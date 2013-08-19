@@ -1,25 +1,28 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-
-from os import path, system
-from subprocess import call, check_output
+from subprocess import call, check_output, Popen
 
 import argparse
+import os
 import sys
 
 
-def open_file(filename):
-    call(['xdg-open', filename])
+def open_file(filepath):
+    call(['xdg-open', filepath])
+
+
+def copy_to_xclip(filepath):
+    os.system('echo %s | xclip' % filepath)
 
 
 def locate(terms, is_directory, case_sensitive):
     options = []
 
-    if is_directory:
-        pattern = '*' + '*'.join(terms)
-    else:
-        pattern = '*' + '*'.join(terms) + '*'
+    pattern = '*' + '*'.join(terms)
+
+    if not is_directory:
+        pattern += '*'
         options.append('--basename')
 
     if not case_sensitive:
@@ -46,6 +49,15 @@ def show_candidates(items):
             print('[%d]' % i, items[i - 1])
 
 
+def select_item(items, action):
+    if len(items) == 1:
+        action(items[0])
+    else:
+        show_candidates(items)
+        item_no = int(raw_input("\nChoose one file to open: "))
+        action(items[item_no - 1])
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Find and open files easily.')
 
@@ -62,21 +74,21 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Enable case sensitive search')
 
+    parser.add_argument('-x', '--xclip',
+                        action='store_true',
+                        help='Copy full path of seleted item with `xclip\'')
+
     args = parser.parse_args()
     items = locate(args.terms, args.directory, args.case_sensitive)
 
     if len(items) == 0:
         print("File(s) not found.")
+        sys.exit(1)
 
-    elif len(items) == 1:
-        open_file(items[0])
-
-    else:
-        show_candidates(items)
-
-        try:
-            item_no = int(raw_input("\nChoose one file to open: "))
-            open_file(items[item_no - 1])
-
-        except:
-            pass
+    try:
+        if args.xclip:
+            select_item(items, copy_to_xclip)
+        else:
+            select_item(items, open_file)
+    except:
+        pass
