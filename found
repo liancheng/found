@@ -2,9 +2,10 @@
 
 from __future__ import print_function
 from subprocess import call, check_output, Popen
+from os.path import isdir
+from os import system
 
 import argparse
-import os
 import sys
 
 
@@ -13,7 +14,16 @@ def open_file(filepath):
 
 
 def copy_to_xclip(filepath):
-    os.system('echo %s | xclip' % filepath)
+    system('echo -n %s | xclip' % filepath)
+
+
+def copy_to_xsel(filepath):
+    system('echo -n %s | xsel' % filepath)
+
+
+def write_path(filepath):
+    with open(args.write, 'w') as out:
+        out.write(filepath)
 
 
 def locate(terms, is_directory, case_sensitive):
@@ -31,9 +41,11 @@ def locate(terms, is_directory, case_sensitive):
     cmd = ['locate'] + options + [pattern]
 
     try:
-        return check_output(cmd)[:-1].split('\n')
+        items = check_output(cmd)[:-1].split('\n')
     except:
-        return []
+        items = []
+
+    return [_ for _ in items if isdir(_)] if is_directory else items
 
 
 def show_candidates(items):
@@ -74,9 +86,20 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Enable case sensitive search')
 
-    parser.add_argument('-x', '--xclip',
-                        action='store_true',
-                        help='Copy full path of seleted item with `xclip\'')
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument('-x', '--xclip',
+                       action='store_true',
+                       help='Copy full path of seleted item to X clipboard')
+
+    group.add_argument('-s', '--xsel',
+                       action='store_true',
+                       help='Copy full path of seleted item to X selection')
+
+    group.add_argument('-w', '--write',
+                       metavar='file',
+                       action='store',
+                       help='Write full path of seleted item to `file\'')
 
     args = parser.parse_args()
     items = locate(args.terms, args.directory, args.case_sensitive)
@@ -87,8 +110,14 @@ if __name__ == '__main__':
 
     try:
         if args.xclip:
-            select_item(items, copy_to_xclip)
+            action = copy_to_xclip
+        elif args.xsel:
+            action = copy_to_xsel
+        elif args.write != None:
+            action = write_path
         else:
-            select_item(items, open_file)
+            action = open_file
+
+        select_item(items, action)
     except:
         pass
